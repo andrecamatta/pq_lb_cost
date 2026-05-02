@@ -25,6 +25,12 @@ mais passivos de prazos diferentes, e calcula:
 - Robustez do dimensionamento: cenário real x' > x planejado, breach
   horizon (§7.5).
 
+O custo calculado aqui é o custo incremental do buffer de liquidez, não o
+custo total de funding do balanço. O banco já precisa financiar o ativo. O
+LB adiciona um estoque líquido pré-posicionado para cobrir gaps de rollover,
+e o custo medido é o spread de captação aplicado a esse estoque durante o
+horizonte em que ele precisa ficar disponível.
+
 O pacote é didático. Não substitui sistemas de produção de tesouraria
 (Moody's RiskAuthority, Wolters Kluwer OneSumX, FIS Ambit Liquidity).
 
@@ -56,6 +62,8 @@ bank_multi = multi_liabilities_setup()  # §7.4 com 3 passivos
 - `examples/02_default_economy.jl`: comparação P&L=0 (sem default) vs custo positivo (com sB).
 - `examples/03_multi_liabilities.jl`: vários passivos e alocação pro-rata vs marginal.
 - `examples/04_severer_scenario.jl`: §7.5 com estresse real > planejado.
+- `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs x% e sB, com CSV em `outputs/cost_surface.csv`.
+- `examples/06_endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
 
 Executar:
 
@@ -69,9 +77,23 @@ julia examples/01_canonical.jl
 ] test
 ```
 
-8 testsets cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L=0),
+9 testsets cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L=0),
 Prop. 7.3.6 (custo positivo com sB), monotonicidade em x%, §7.4
-(alocação por passivo), §7.5 (cenário pior), term structure de sB.
+(alocação por passivo), §7.5 (cenário pior), term structure de sB e
+spread endógeno de liquidez.
+
+## Experimentos para o leitor
+
+1. Aumente `x_pct` em `examples/05_cost_surface.jl` e observe que o LB cresce
+   de modo não linear, enquanto o custo continua proporcional ao spread.
+2. Troque parte do `CDB 1y` por `LF 3y` em `brazilian_setup()` e compare o
+   benefício de prazo maior contra o spread maior da LF.
+3. Rode `examples/06_endogenous_spread_allocation.jl` com `threshold = 0.15`
+   e depois com `threshold = 0.30`. A diferença mostra quando a alocação
+   marginal passa a importar para FTP.
+4. Substitua `sB` constante por uma curva crescente em `lb_cost_general`.
+   Esse caso aproxima um banco que só consegue captar em estresse pagando
+   prêmios maiores nos horizontes longos.
 
 ## Estrutura
 
@@ -86,8 +108,12 @@ examples/
   02_default_economy.jl
   03_multi_liabilities.jl
   04_severer_scenario.jl
+  05_cost_surface.jl
+  06_endogenous_spread_allocation.jl
 test/
   runtests.jl
+outputs/
+  cost_surface.csv  # gerado pelo exemplo 05
 ```
 
 ## Referências

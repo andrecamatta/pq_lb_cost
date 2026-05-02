@@ -242,6 +242,131 @@ function marginal_cost_by_liability(bank::StressBank)
 end
 
 """
+    lb_cost_with_endogenous_spread(bank; threshold_ratio, crowding_slope)
+
+Calcula o custo do LB quando o spread de captação incorpora um prêmio
+endógeno de crowding. A intuição é que buffers pequenos podem ser financiados
+ao spread observado de cada passivo, mas buffers grandes consomem capacidade
+de captação do banco e elevam o spread marginal de toda a operação.
+
+Este é o custo incremental de carregar o buffer, não o custo total de funding
+do balanço. O funding dos ativos existe mesmo sem LB; aqui medimos apenas o
+spread aplicado ao estoque líquido pré-posicionado para cobrir gaps.
+
+O prêmio adicional é ativado quando `LB(0) / total_funding` excede
+`threshold_ratio`:
+
+    s_extra = crowding_slope * max(LB(0) / funding - threshold_ratio, 0)
+
+Com `crowding_slope = 0`, a função coincide com `lb_cost_with_spread`.
+"""
+function lb_cost_with_endogenous_spread(
+    bank::StressBank;
+    threshold_ratio::Float64 = 0.20,
+    crowding_slope::Float64 = 0.10,
+)
+    return _lb_cost_with_endogenous_spread(
+        bank;
+        threshold_ratio = threshold_ratio,
+        crowding_slope = crowding_slope,
+        capacity_funding = total_funding(bank),
+    )
+end
+
+function _lb_cost_with_endogenous_spread(
+    bank::StressBank;
+    threshold_ratio::Float64,
+    crowding_slope::Float64,
+    capacity_funding::Float64,
+)
+    rf = bank.risk_free_rate
+    funding = capacity_funding
+    lb_ratio = funding > 0 ? lb_initial(bank) / funding : 0.0
+    extra_spread = crowding_slope * max(lb_ratio - threshold_ratio, 0.0)
+
+    cost = 0.0
+    for liab in bank.liabilities
+        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        effective_spread = liab.funding_spread + extra_spread
+        for (t_gap, gap) in gaps
+            discount = 1.0 / (1 + rf)^t_gap
+            cost += gap * effective_spread * t_gap * discount
+        end
+    end
+    return cost
+end
+
+"""
+    marginal_endogenous_cost_by_liability(bank; threshold_ratio, crowding_slope)
+
+Aloca o custo com spread endógeno por valor de Shapley exato. Como o prêmio
+de crowding depende do LB total, adicionar um passivo altera o spread marginal
+dos demais. Por isso a alocação resultante pode divergir da alocação pro-rata
+mesmo quando os funding gaps são aditivos.
+
+Como o cálculo exato enumera permutações, a função é destinada a exemplos
+pequenos. Para mais de 8 passivos, agregue os passivos por bucket antes.
+"""
+function marginal_endogenous_cost_by_liability(
+    bank::StressBank;
+    threshold_ratio::Float64 = 0.20,
+    crowding_slope::Float64 = 0.10,
+)
+    n = length(bank.liabilities)
+    allocation = Dict(liab.name => 0.0 for liab in bank.liabilities)
+    n == 0 && return allocation
+    n > 8 && error("Shapley exato enumera n! permutações; agregue passivos por bucket para n > 8.")
+
+    capacity_funding = total_funding(bank)
+    orders = _index_permutations(collect(1:n))
+    for order in orders
+        coalition = Int[]
+        previous_cost = 0.0
+        for idx in order
+            push!(coalition, idx)
+            coalition_bank = _bank_with_liability_indices(bank, coalition)
+            new_cost = _lb_cost_with_endogenous_spread(
+                coalition_bank;
+                threshold_ratio = threshold_ratio,
+                crowding_slope = crowding_slope,
+                capacity_funding = capacity_funding,
+            )
+            allocation[bank.liabilities[idx].name] += new_cost - previous_cost
+            previous_cost = new_cost
+        end
+    end
+
+    for k in keys(allocation)
+        allocation[k] /= length(orders)
+    end
+    return allocation
+end
+
+function _bank_with_liability_indices(bank::StressBank, indices::Vector{Int})
+    return StressBank(
+        name = bank.name,
+        asset_notional = bank.asset_notional,
+        asset_maturity = bank.asset_maturity,
+        asset_credit_spread = bank.asset_credit_spread,
+        liabilities = [bank.liabilities[i] for i in indices],
+        risk_free_rate = bank.risk_free_rate,
+        stress_rollover_failure = bank.stress_rollover_failure,
+    )
+end
+
+function _index_permutations(xs::Vector{Int})
+    isempty(xs) && return [Int[]]
+    result = Vector{Vector{Int}}()
+    for (pos, x) in enumerate(xs)
+        rest = [y for (j, y) in enumerate(xs) if j != pos]
+        for suffix in _index_permutations(rest)
+            push!(result, [x; suffix])
+        end
+    end
+    return result
+end
+
+"""
     cost_under_severer_scenario(bank, x_actual)
 
 Calcula o custo do LB efetivamente realizado quando o estresse real é maior

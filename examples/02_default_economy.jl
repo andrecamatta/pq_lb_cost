@@ -2,7 +2,8 @@
 #
 # Reproduz o trade-off central do §7.3:
 # - Sem default: P&L do LB = 0 (Prop 7.3.3)
-# - Com default e sB > 0: custo positivo proporcional a sB e ao tamanho do LB
+# - Com default e sB > 0: custo incremental positivo para carregar o LB
+#   O custo abaixo nao e o custo total de funding do ativo.
 
 using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))

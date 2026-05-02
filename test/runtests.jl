@@ -87,4 +87,31 @@ using PQLBCost
         @test cost_general > cost_flat
     end
 
+    @testset "Spread endógeno e alocação marginal" begin
+        bank = multi_liabilities_setup(K = 1000.0, x_pct = 0.18)
+        cost_linear = lb_cost_with_spread(bank)
+        cost_endogenous = lb_cost_with_endogenous_spread(
+            bank;
+            threshold_ratio = 0.20,
+            crowding_slope = 0.12,
+        )
+        @test cost_endogenous > cost_linear
+
+        alloc_linear = allocate_cost_by_liability(bank)
+        alloc_endogenous = marginal_endogenous_cost_by_liability(
+            bank;
+            threshold_ratio = 0.20,
+            crowding_slope = 0.12,
+        )
+        @test sum(values(alloc_endogenous)) ≈ cost_endogenous atol=1e-6
+        @test any(abs(alloc_endogenous[k] - alloc_linear[k]) > 1e-6 for k in keys(alloc_linear))
+
+        cost_no_crowding = lb_cost_with_endogenous_spread(
+            bank;
+            threshold_ratio = 1.0,
+            crowding_slope = 0.12,
+        )
+        @test cost_no_crowding ≈ cost_linear
+    end
+
 end
