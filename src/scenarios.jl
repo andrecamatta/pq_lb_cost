@@ -45,6 +45,30 @@ function multi_liabilities_setup(; K::Float64 = 100.0, x_pct::Float64 = 0.10)
 end
 
 """
+    differentiated_runoff_setup()
+
+Caso com x% específico por passivo. Representa uma aproximação mais realista
+para FTP, na qual depósitos, funding atacadista e dívida sênior não têm a
+mesma probabilidade de falhar na renovação.
+"""
+function differentiated_runoff_setup(; K::Float64 = 1000.0)
+    return StressBank(
+        name = "Runoff diferenciado por passivo",
+        asset_notional = K,
+        asset_maturity = 6,
+        asset_credit_spread = 0.02,
+        liabilities = [
+            Liability(name = "Depósito varejo 1y", notional = 0.4 * K, maturity_periods = 1, funding_spread = 0.003, rollover_failure = 0.05),
+            Liability(name = "CDB atacado 1y", notional = 0.3 * K, maturity_periods = 1, funding_spread = 0.008, rollover_failure = 0.15),
+            Liability(name = "LF 2y", notional = 0.2 * K, maturity_periods = 2, funding_spread = 0.012, rollover_failure = 0.10),
+            Liability(name = "Senior 3y", notional = 0.1 * K, maturity_periods = 3, funding_spread = 0.020, rollover_failure = 0.08),
+        ],
+        risk_free_rate = 0.03,
+        stress_rollover_failure = 0.10,
+    )
+end
+
+"""
     brazilian_setup()
 
 Calibração para banco brasileiro de S1, com captação predominante em CDB

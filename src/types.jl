@@ -9,12 +9,14 @@ no nominal total de captação.
 - `notional`: valor de captação (mesma unidade de K do ativo)
 - `maturity_periods`: prazo em períodos de rollover (1 = um período por ciclo de renovação)
 - `funding_spread`: sB pago pelo banco sobre o risk-free (em fração, ex.: 0.01 = 100 bps)
+- `rollover_failure`: x% específico do passivo. Se `nothing`, usa o x% do banco.
 """
 Base.@kwdef struct Liability
     name::String
     notional::Float64
     maturity_periods::Int
     funding_spread::Float64 = 0.0
+    rollover_failure::Union{Nothing, Float64} = nothing
 end
 
 """
@@ -34,7 +36,7 @@ falhas de renovação.
 - `asset_credit_spread`: sA, spread de crédito do ativo (compensa default risk do issuer)
 - `liabilities`: vetor de Liability que financiam o ativo
 - `risk_free_rate`: r_f por período
-- `stress_rollover_failure`: x%, fração que falha em cada rollover (0.10 = 10%)
+- `stress_rollover_failure`: x% padrão, usado quando o passivo não define x% próprio
 """
 Base.@kwdef struct StressBank
     name::String
@@ -60,8 +62,29 @@ function FundingMix(specs::Vector{NTuple{4, Any}})
 end
 
 """
+    FundingMix(specs::Vector{NTuple{5, Any}})
+
+Versão com x% específico por passivo: (nome, notional, maturidade, spread, x%).
+"""
+function FundingMix(specs::Vector{NTuple{5, Any}})
+    return [Liability(name = String(s[1]), notional = Float64(s[2]),
+                       maturity_periods = Int(s[3]), funding_spread = Float64(s[4]),
+                       rollover_failure = Float64(s[5]))
+            for s in specs]
+end
+
+"""
     total_funding(bank)
 
 Soma dos notional dos passivos do banco.
 """
 total_funding(bank::StressBank) = sum(l.notional for l in bank.liabilities)
+
+"""
+    rollover_failure(liability, bank)
+
+Retorna o x% efetivo do passivo: valor específico do passivo quando informado,
+ou o cenário padrão do banco caso contrário.
+"""
+rollover_failure(liability::Liability, bank::StressBank) =
+    something(liability.rollover_failure, bank.stress_rollover_failure)

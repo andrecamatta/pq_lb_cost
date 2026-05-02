@@ -64,6 +64,7 @@ bank_multi = multi_liabilities_setup()  # §7.4 com 3 passivos
 - `examples/04_severer_scenario.jl`: §7.5 com estresse real > planejado.
 - `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs x% e sB, com CSV em `outputs/cost_surface.csv`.
 - `examples/06_endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
+- `examples/07_differentiated_runoff.jl`: exemplo com x% específico por passivo.
 
 Executar:
 
@@ -77,10 +78,10 @@ julia examples/01_canonical.jl
 ] test
 ```
 
-9 testsets cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L=0),
+10 testsets cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L=0),
 Prop. 7.3.6 (custo positivo com sB), monotonicidade em x%, §7.4
 (alocação por passivo), §7.5 (cenário pior), term structure de sB e
-spread endógeno de liquidez.
+spread endógeno de liquidez, além de x% diferenciado por passivo.
 
 ## Experimentos para o leitor
 
@@ -110,6 +111,7 @@ examples/
   04_severer_scenario.jl
   05_cost_surface.jl
   06_endogenous_spread_allocation.jl
+  07_differentiated_runoff.jl
 test/
   runtests.jl
 outputs/

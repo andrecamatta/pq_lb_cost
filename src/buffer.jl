@@ -58,7 +58,7 @@ Em forma fechada para um único passivo:
 function lb_initial(bank::StressBank)
     total = 0.0
     for liab in bank.liabilities
-        for (_, gap) in funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        for (_, gap) in funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
             total += gap
         end
     end
@@ -76,7 +76,7 @@ function lb_balance_path(bank::StressBank)
     # Coleta todos os gaps em todas as datas
     events = Tuple{Int, Float64}[]
     for liab in bank.liabilities
-        for (t, gap) in funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        for (t, gap) in funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
             push!(events, (t, gap))
         end
     end
@@ -107,7 +107,7 @@ function lb_cost_riskfree(bank::StressBank)
     rf = bank.risk_free_rate
     cost = 0.0
     for liab in bank.liabilities
-        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        gaps = funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
         for (t_gap, gap) in gaps
             # Custo = juros pagos ao passivo do LB durante t_gap períodos
             interest_paid = gap * rf * t_gap
@@ -140,7 +140,7 @@ function lb_cost_with_spread(bank::StressBank)
     rf = bank.risk_free_rate
     cost = 0.0
     for liab in bank.liabilities
-        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        gaps = funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
         for (t_gap, gap) in gaps
             # O LB de tamanho `gap` é mantido entre t=0 e t=t_gap
             # Custo de carrego = sB pago sobre o gap durante t_gap períodos, descontado a r_f
@@ -164,7 +164,7 @@ function lb_cost_general(bank::StressBank, sB_curve::Function)
     rf = bank.risk_free_rate
     cost = 0.0
     for liab in bank.liabilities
-        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        gaps = funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
         for (t_gap, gap) in gaps
             discount = 1.0 / (1 + rf)^t_gap
             carry_cost = gap * sB_curve(t_gap) * t_gap * discount
@@ -186,7 +186,7 @@ function allocate_cost_by_liability(bank::StressBank)
     rf = bank.risk_free_rate
     allocation = Dict{String, Float64}()
     for liab in bank.liabilities
-        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        gaps = funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
         liab_cost = 0.0
         for (t_gap, gap) in gaps
             discount = 1.0 / (1 + rf)^t_gap
@@ -286,7 +286,7 @@ function _lb_cost_with_endogenous_spread(
 
     cost = 0.0
     for liab in bank.liabilities
-        gaps = funding_gap_schedule(liab, bank.stress_rollover_failure, bank.asset_maturity)
+        gaps = funding_gap_schedule(liab, rollover_failure(liab, bank), bank.asset_maturity)
         effective_spread = liab.funding_spread + extra_spread
         for (t_gap, gap) in gaps
             discount = 1.0 / (1 + rf)^t_gap
@@ -382,7 +382,7 @@ function cost_under_severer_scenario(bank::StressBank, x_actual::Float64)
         asset_notional = bank.asset_notional,
         asset_maturity = bank.asset_maturity,
         asset_credit_spread = bank.asset_credit_spread,
-        liabilities = bank.liabilities,
+        liabilities = [_liability_with_rollover_failure(liab, x_actual) for liab in bank.liabilities],
         risk_free_rate = bank.risk_free_rate,
         stress_rollover_failure = x_actual,
     )
@@ -394,6 +394,16 @@ function cost_under_severer_scenario(bank::StressBank, x_actual::Float64)
         realized_gap = realized,
         shortfall = shortfall,
         breach = shortfall > 0,
+    )
+end
+
+function _liability_with_rollover_failure(liability::Liability, x_pct::Float64)
+    return Liability(
+        name = liability.name,
+        notional = liability.notional,
+        maturity_periods = liability.maturity_periods,
+        funding_spread = liability.funding_spread,
+        rollover_failure = x_pct,
     )
 end
 

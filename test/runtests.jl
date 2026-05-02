@@ -114,4 +114,17 @@ using PQLBCost
         @test cost_no_crowding ≈ cost_linear
     end
 
+    @testset "Runoff diferenciado por passivo" begin
+        bank = differentiated_runoff_setup(K = 1000.0)
+        @test rollover_failure(bank.liabilities[1], bank) ≈ 0.05
+        @test rollover_failure(bank.liabilities[2], bank) ≈ 0.15
+
+        uniform_bank = multi_liabilities_setup(K = 1000.0, x_pct = 0.10)
+        @test lb_initial(bank) != lb_initial(uniform_bank)
+
+        allocation = allocate_cost_by_liability(bank)
+        @test sum(values(allocation)) ≈ lb_cost_with_spread(bank)
+        @test allocation["CDB atacado 1y"] > allocation["Depósito varejo 1y"]
+    end
+
 end
