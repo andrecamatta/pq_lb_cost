@@ -7,9 +7,10 @@ no nominal total de captação.
 # Campos
 - `name`: identificação
 - `notional`: valor de captação (mesma unidade de K do ativo)
-- `maturity_periods`: prazo em períodos de rollover (1 = um período por ciclo de renovação)
+- `maturity_periods`: prazo em períodos de renovação (1 = um período por ciclo de renovação)
 - `funding_spread`: sB pago pelo banco sobre o risk-free (em fração, ex.: 0.01 = 100 bps)
-- `rollover_failure`: x% específico do passivo. Se `nothing`, usa o x% do banco.
+- `rollover_failure`: x% específico do passivo que não se renova em estresse.
+  Se `nothing`, usa o x% do banco.
 """
 Base.@kwdef struct Liability
     name::String
@@ -40,9 +41,9 @@ end
 Banco estilizado seguindo o exemplo canônico de Castagna e Fede (2013, §7.3).
 
 Um único ativo de prazo `asset_maturity` (em períodos), financiado por um
-ou mais passivos. Em cada data de rollover, fração `x%` do passivo a renovar
-não é renovada (cenário de estresse). O LB pré-construído cobre essas
-falhas de renovação.
+ou mais passivos. Em cada data de renovação, uma fração `x%` do passivo não
+é renovada no cenário de estresse. O LB pré-construído cobre a dificuldade de
+renovar esses passivos.
 
 # Campos
 - `name`: identificação do banco
@@ -78,31 +79,6 @@ Base.@kwdef struct FundingMixOptimizationResult
     unit_direct_costs::Dict{String, Float64}
     unit_buffer_costs::Dict{String, Float64}
     unit_total_costs::Dict{String, Float64}
-end
-
-"""
-    FundingMix
-
-Conveniência para construir um StressBank com vários passivos. Recebe um
-vetor de tuplas (nome, notional, maturidade, spread) e retorna o
-vetor de Liability correspondente.
-"""
-function FundingMix(specs::Vector{NTuple{4, Any}})
-    return [Liability(name = String(s[1]), notional = Float64(s[2]),
-                       maturity_periods = Int(s[3]), funding_spread = Float64(s[4]))
-            for s in specs]
-end
-
-"""
-    FundingMix(specs::Vector{NTuple{5, Any}})
-
-Versão com x% específico por passivo: (nome, notional, maturidade, spread, x%).
-"""
-function FundingMix(specs::Vector{NTuple{5, Any}})
-    return [Liability(name = String(s[1]), notional = Float64(s[2]),
-                       maturity_periods = Int(s[3]), funding_spread = Float64(s[4]),
-                       rollover_failure = Float64(s[5]))
-            for s in specs]
 end
 
 """

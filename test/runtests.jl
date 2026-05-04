@@ -49,35 +49,6 @@ using PQLBCost
         @test lb_initial(b2) > lb_initial(b1)
     end
 
-    @testset "§7.4 vários passivos" begin
-        bank = multi_liabilities_setup(K = 100.0, x_pct = 0.10)
-        lb0 = lb_initial(bank)
-        @test lb0 > 0
-
-        # Alocação por passivo soma ao custo total
-        alloc = allocate_cost_by_liability(bank)
-        total = sum(values(alloc))
-        @test total ≈ lb_cost_with_spread(bank)
-
-        # Alocação marginal soma (após normalização) ao custo total
-        marginal = marginal_cost_by_liability(bank)
-        total_marginal = sum(values(marginal))
-        @test total_marginal ≈ lb_cost_with_spread(bank) atol=1e-6
-    end
-
-    @testset "§7.5 cenário pior que o previsto" begin
-        bank = canonical_setup(K = 100.0, x_pct = 0.10)
-        result = cost_under_severer_scenario(bank, 0.20)
-        @test result.realized_gap > result.planned_lb
-        @test result.shortfall > 0
-        @test result.breach == true
-
-        # Cenário melhor: sem breach
-        result2 = cost_under_severer_scenario(bank, 0.05)
-        @test result2.shortfall == 0
-        @test result2.breach == false
-    end
-
     @testset "Term structure de sB" begin
         bank = canonical_setup(K = 100.0, x_pct = 0.10, sB = 0.01)
         # Função sB que cresce com horizonte (estresse de longo prazo é maior)
@@ -85,46 +56,6 @@ using PQLBCost
         cost_general = lb_cost_general(bank, sB_curve)
         cost_flat = lb_cost_with_spread(bank)
         @test cost_general > cost_flat
-    end
-
-    @testset "Spread endógeno e alocação marginal" begin
-        bank = multi_liabilities_setup(K = 1000.0, x_pct = 0.18)
-        cost_linear = lb_cost_with_spread(bank)
-        cost_endogenous = lb_cost_with_endogenous_spread(
-            bank;
-            threshold_ratio = 0.20,
-            crowding_slope = 0.12,
-        )
-        @test cost_endogenous > cost_linear
-
-        alloc_linear = allocate_cost_by_liability(bank)
-        alloc_endogenous = marginal_endogenous_cost_by_liability(
-            bank;
-            threshold_ratio = 0.20,
-            crowding_slope = 0.12,
-        )
-        @test sum(values(alloc_endogenous)) ≈ cost_endogenous atol=1e-6
-        @test any(abs(alloc_endogenous[k] - alloc_linear[k]) > 1e-6 for k in keys(alloc_linear))
-
-        cost_no_crowding = lb_cost_with_endogenous_spread(
-            bank;
-            threshold_ratio = 1.0,
-            crowding_slope = 0.12,
-        )
-        @test cost_no_crowding ≈ cost_linear
-    end
-
-    @testset "Runoff diferenciado por passivo" begin
-        bank = differentiated_runoff_setup(K = 1000.0)
-        @test rollover_failure(bank.liabilities[1], bank) ≈ 0.05
-        @test rollover_failure(bank.liabilities[2], bank) ≈ 0.15
-
-        uniform_bank = multi_liabilities_setup(K = 1000.0, x_pct = 0.10)
-        @test lb_initial(bank) != lb_initial(uniform_bank)
-
-        allocation = allocate_cost_by_liability(bank)
-        @test sum(values(allocation)) ≈ lb_cost_with_spread(bank)
-        @test allocation["CDB atacado 1y"] > allocation["Depósito varejo 1y"]
     end
 
     @testset "Otimização de mix de funding" begin
