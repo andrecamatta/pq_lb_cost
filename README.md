@@ -65,6 +65,7 @@ bank_multi = multi_liabilities_setup()  # §7.4 com 3 passivos
 - `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs x% e sB, com CSV em `outputs/cost_surface.csv`.
 - `examples/06_endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
 - `examples/07_differentiated_runoff.jl`: exemplo com x% específico por passivo.
+- `examples/08_optimize_funding_mix.jl`: programa linear em JuMP/HiGHS para comparar o mix ótimo sem e com custo do buffer.
 
 Executar:
 
@@ -112,6 +113,7 @@ examples/
   05_cost_surface.jl
   06_endogenous_spread_allocation.jl
   07_differentiated_runoff.jl
+  08_optimize_funding_mix.jl
 test/
   runtests.jl
 outputs/

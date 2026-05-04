@@ -20,6 +20,21 @@ Base.@kwdef struct Liability
 end
 
 """
+    FundingSource
+
+Fonte elegível para uma otimização de mix de funding. Os limites mínimo e
+máximo são pesos no funding total.
+"""
+Base.@kwdef struct FundingSource
+    name::String
+    maturity_periods::Int
+    funding_spread::Float64
+    rollover_failure::Float64
+    min_weight::Float64 = 0.0
+    max_weight::Float64 = 1.0
+end
+
+"""
     StressBank
 
 Banco estilizado seguindo o exemplo canônico de Castagna e Fede (2013, §7.3).
@@ -46,6 +61,23 @@ Base.@kwdef struct StressBank
     liabilities::Vector{Liability}
     risk_free_rate::Float64 = 0.0
     stress_rollover_failure::Float64 = 0.10
+end
+
+"""
+    FundingMixOptimizationResult
+
+Resultado da otimização de mix de funding. `bank` contém os passivos já
+dimensionados no notional ótimo.
+"""
+Base.@kwdef struct FundingMixOptimizationResult
+    bank::StressBank
+    direct_funding_cost::Float64
+    buffer_cost::Float64
+    total_cost::Float64
+    buffer_cost_share::Float64
+    unit_direct_costs::Dict{String, Float64}
+    unit_buffer_costs::Dict{String, Float64}
+    unit_total_costs::Dict{String, Float64}
 end
 
 """

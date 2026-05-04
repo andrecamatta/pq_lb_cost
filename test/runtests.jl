@@ -127,4 +127,26 @@ using PQLBCost
         @test allocation["CDB atacado 1y"] > allocation["Depósito varejo 1y"]
     end
 
+    @testset "Otimização de mix de funding" begin
+        sources = [
+            FundingSource(name = "Depósito varejo", maturity_periods = 1, funding_spread = 0.0045, rollover_failure = 0.05, min_weight = 0.20, max_weight = 0.70),
+            FundingSource(name = "CDB atacado", maturity_periods = 1, funding_spread = 0.0042, rollover_failure = 0.30, min_weight = 0.00, max_weight = 0.60),
+            FundingSource(name = "LF 2y", maturity_periods = 2, funding_spread = 0.012, rollover_failure = 0.10, min_weight = 0.10, max_weight = 0.50),
+            FundingSource(name = "Senior 3y", maturity_periods = 3, funding_spread = 0.020, rollover_failure = 0.08, min_weight = 0.10, max_weight = 0.40),
+        ]
+        without_buffer = optimize_funding_mix(sources; include_buffer_cost = false)
+        with_buffer = optimize_funding_mix(sources; include_buffer_cost = true)
+
+        weights_without = Dict(l.name => l.notional / total_funding(without_buffer.bank) for l in without_buffer.bank.liabilities)
+        weights_with = Dict(l.name => l.notional / total_funding(with_buffer.bank) for l in with_buffer.bank.liabilities)
+
+        @test weights_without["CDB atacado"] ≈ 0.60
+        @test weights_with["Depósito varejo"] ≈ 0.70
+        @test direct_funding_spread_cost(with_buffer.bank) ≈ with_buffer.direct_funding_cost
+        @test lb_cost_with_spread(with_buffer.bank) ≈ with_buffer.buffer_cost
+        @test with_buffer.direct_funding_cost > without_buffer.direct_funding_cost
+        @test with_buffer.direct_funding_cost + with_buffer.buffer_cost <
+              without_buffer.direct_funding_cost + without_buffer.buffer_cost
+    end
+
 end
