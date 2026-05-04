@@ -3,36 +3,39 @@
 Pacote Julia que implementa o cálculo do custo do buffer de liquidez (LB)
 em bancos sob cenários de estresse de rollover, com base nas Propositions
 7.3.1-7.3.6 de Castagna e Fede (2013, *Measuring and Managing Liquidity Risk*,
-Cap. 7), incluindo a generalização §7.4 (vários passivos) e §7.5
-(cenários piores que o previsto).
+Cap. 7). O pacote também inclui extensões didáticas para múltiplos passivos,
+runoff diferenciado, spread endógeno de liquidez e otimização linear de mix de
+funding com JuMP/HiGHS.
 
-Companion code do artigo "Maturity mismatch e o custo do buffer de liquidez"
+Código de apoio do artigo "O custo do buffer de liquidez sob funding spread"
 (Pílulas de Quant).
 
 ## Escopo
 
-Modela um banco estilizado com um ativo de prazo T_A financiado por um ou
+Modela um banco estilizado com um ativo de prazo `T_A` financiado por um ou
 mais passivos de prazos diferentes, e calcula:
 
-- LB(0) construído ex-ante para cobrir funding gaps em cenários de
-  rollover stressado (Prop. 7.3.1, 7.3.2; equação 7.1).
+- `LB(0)` construído ex-ante para cobrir funding gaps em cenários de rollover
+  stressado (Prop. 7.3.1, 7.3.2; equação 7.1).
 - Trajetória do saldo do LB ao longo do horizonte do ativo.
-- P&L do LB em economia sem default (Prop. 7.3.3) — verificado numericamente
+- P&L do LB em economia sem default (Prop. 7.3.3), verificado numericamente
   como zero.
-- Custo do LB em economia com funding spread sB (Prop. 7.3.6).
-- Versão geral do custo com term structure de sB (§7.3.4).
-- Alocação do custo por passivo: pro-rata e marginal (§7.4).
-- Robustez do dimensionamento: cenário real x' > x planejado, breach
+- Custo do LB em economia com funding spread `sB` (Prop. 7.3.6).
+- Versão geral do custo com estrutura a termo de `sB` (§7.3.4).
+- Alocação do custo por passivo: pro-rata, marginal e com spread endógeno.
+- Robustez do dimensionamento: cenário real `x' > x` planejado, breach
   horizon (§7.5).
+- Otimização linear de mix de funding, comparando a função objetivo sem e com
+  o custo em valor presente do buffer.
 
-O custo calculado aqui é o custo incremental do buffer de liquidez, não o
-custo total de funding do balanço. O banco já precisa financiar o ativo. O
-LB adiciona um estoque líquido pré-posicionado para cobrir gaps de rollover,
-e o custo medido é o spread de captação aplicado a esse estoque durante o
-horizonte em que ele precisa ficar disponível.
+O custo calculado aqui é o custo incremental do buffer de liquidez, não o custo
+total de funding do balanço. O banco já precisa financiar o ativo. O LB adiciona
+um estoque líquido pré-posicionado para cobrir gaps de rollover, e o custo
+medido é o spread de captação aplicado a esse estoque durante o horizonte em
+que ele precisa ficar disponível.
 
-O pacote é didático. Não substitui sistemas de produção de tesouraria
-(Moody's RiskAuthority, Wolters Kluwer OneSumX, FIS Ambit Liquidity).
+O pacote é didático. Não substitui sistemas de produção de tesouraria como
+Moody's RiskAuthority, Wolters Kluwer OneSumX ou FIS Ambit Liquidity.
 
 ## Instalação
 
@@ -46,25 +49,27 @@ O pacote é didático. Não substitui sistemas de produção de tesouraria
 ```julia
 using PQLBCost
 
-# Caso canônico Castagna-Fede: ativo 3 períodos, passivo 1 período, x=10%, sB=100bps
+# Caso canônico Castagna-Fede: ativo 3 períodos, passivo 1 período,
+# x = 10%, sB = 100 bps.
 bank = canonical_setup(K = 100.0, x_pct = 0.10, sB = 0.01)
 summary_lb_cost(bank)
 
 # Outros setups pré-calibrados:
-bank_br = brazilian_setup()  # banco S1 brasileiro
-bank_eu = european_setup()   # banco G-SII europeu
-bank_multi = multi_liabilities_setup()  # §7.4 com 3 passivos
+bank_br = brazilian_setup()
+bank_eu = european_setup()
+bank_multi = multi_liabilities_setup()
+bank_runoff = differentiated_runoff_setup()
 ```
 
 ## Exemplos
 
 - `examples/01_canonical.jl`: caso canônico do livro com verificação de Prop. 7.3.3.
-- `examples/02_default_economy.jl`: comparação P&L=0 (sem default) vs custo positivo (com sB).
+- `examples/02_default_economy.jl`: comparação P&L = 0 (sem default) vs custo positivo (com `sB`).
 - `examples/03_multi_liabilities.jl`: vários passivos e alocação pro-rata vs marginal.
-- `examples/04_severer_scenario.jl`: §7.5 com estresse real > planejado.
-- `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs x% e sB, com CSV em `outputs/cost_surface.csv`.
+- `examples/04_severer_scenario.jl`: §7.5 com estresse real maior que o planejado.
+- `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs `x%` e `sB`, com CSV em `outputs/cost_surface.csv`.
 - `examples/06_endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
-- `examples/07_differentiated_runoff.jl`: exemplo com x% específico por passivo.
+- `examples/07_differentiated_runoff.jl`: exemplo com `x%` específico por passivo.
 - `examples/08_optimize_funding_mix.jl`: programa linear em JuMP/HiGHS para comparar o mix ótimo sem e com custo do buffer.
 
 Executar:
@@ -79,10 +84,11 @@ julia examples/01_canonical.jl
 ] test
 ```
 
-10 testsets cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L=0),
-Prop. 7.3.6 (custo positivo com sB), monotonicidade em x%, §7.4
-(alocação por passivo), §7.5 (cenário pior), term structure de sB e
-spread endógeno de liquidez, além de x% diferenciado por passivo.
+Testes cobrindo: equação 7.1, caso canônico, Prop. 7.3.3 (P&L = 0),
+Prop. 7.3.6 (custo positivo com `sB`), monotonicidade em `x%`, §7.4
+(alocação por passivo), §7.5 (cenário pior), estrutura a termo de `sB`,
+spread endógeno de liquidez, `x%` diferenciado por passivo e otimização linear
+de mix de funding.
 
 ## Experimentos para o leitor
 
@@ -96,15 +102,19 @@ spread endógeno de liquidez, além de x% diferenciado por passivo.
 4. Substitua `sB` constante por uma curva crescente em `lb_cost_general`.
    Esse caso aproxima um banco que só consegue captar em estresse pagando
    prêmios maiores nos horizontes longos.
+5. Rode `examples/08_optimize_funding_mix.jl` e compare o mix ótimo quando o
+   objetivo ignora o buffer com o mix ótimo quando o custo do buffer entra na
+   função objetivo.
 
 ## Estrutura
 
-```
+```text
 src/
-  PQLBCost.jl    # módulo principal
-  types.jl       # Liability, StressBank, FundingMix
-  buffer.jl      # available_funding, lb_initial, lb_cost_*, allocate_*
-  scenarios.jl   # canonical_setup, brazilian_setup, european_setup, multi_liabilities_setup
+  PQLBCost.jl     # módulo principal
+  types.jl        # Liability, FundingSource, StressBank, FundingMix
+  buffer.jl       # available_funding, lb_initial, lb_cost_*, allocate_*
+  optimization.jl # direct_funding_spread_cost, optimize_funding_mix
+  scenarios.jl    # canonical_setup, brazilian_setup, european_setup, ...
 examples/
   01_canonical.jl
   02_default_economy.jl
