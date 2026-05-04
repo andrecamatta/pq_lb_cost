@@ -1,4 +1,4 @@
-# Exemplo 2 — Comparação entre economia sem default e economia com default
+# Comparação entre economia sem default e economia com default
 #
 # Reproduz o trade-off central do §7.3:
 # - Sem default: P&L do LB = 0 (Prop 7.3.3)

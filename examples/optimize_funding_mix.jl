@@ -1,4 +1,4 @@
-# Exemplo 8 - Otimização de mix de funding
+# Otimização de mix de funding
 #
 # Compara duas funções objetivo:
 # 1. minimizar apenas o custo direto de funding;

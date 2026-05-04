@@ -1,4 +1,4 @@
-# Exemplo 7 - Runoff diferenciado por passivo
+# Runoff diferenciado por passivo
 #
 # Mostra uma configuração mais próxima de FTP: cada fonte de funding tem seu
 # próprio x%, em vez de aplicar o mesmo estresse de rollover a todo o balanço.

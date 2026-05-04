@@ -1,4 +1,4 @@
-# Exemplo 5 - Superficie de sensibilidade custo vs x% e sB
+# Superfície de sensibilidade custo vs x% e sB
 #
 # Gera uma grade simples que ajuda o leitor a enxergar duas alavancas:
 # o estresse de rollover aumenta o tamanho do LB, e o funding spread aumenta

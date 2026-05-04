@@ -1,4 +1,4 @@
-# Exemplo 1 — Caso canônico de Castagna e Fede (2013, §7.3)
+# Caso canônico de Castagna e Fede (2013, §7.3)
 #
 # Banco com ativo de 3 períodos (T_A = 3) financiado por um único passivo
 # de 1 período (T_L = 1). Cenário de estresse de rollover: 10% do passivo

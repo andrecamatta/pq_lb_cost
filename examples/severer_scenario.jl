@@ -1,4 +1,4 @@
-# Exemplo 4 — Cenário de estresse pior que o previsto (§7.5)
+# Cenário de estresse pior que o previsto (§7.5)
 #
 # O LB foi dimensionado supondo x% = 10%. O que acontece se o estresse real
 # subir para 20%? Qual é o tamanho do shortfall e em que data ocorreria o

@@ -1,4 +1,4 @@
-# Exemplo 6 - Quando a alocacao marginal diverge da pro-rata
+# Quando a alocação marginal diverge da pro-rata
 #
 # O custo linear por funding gap faz a alocacao pro-rata e a marginal ficarem
 # muito parecidas. Este exemplo adiciona um premio endogeno de crowding:

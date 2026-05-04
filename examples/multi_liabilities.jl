@@ -1,4 +1,4 @@
-# Exemplo 3 — Vários passivos financiando o mesmo ativo (§7.4)
+# Vários passivos financiando o mesmo ativo (§7.4)
 #
 # Quando múltiplos passivos com prazos e spreads diferentes financiam um
 # mesmo ativo, o perfil LB(t) deixa de ser monotônico, e a alocação do

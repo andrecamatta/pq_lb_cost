@@ -63,19 +63,19 @@ bank_runoff = differentiated_runoff_setup()
 
 ## Exemplos
 
-- `examples/01_canonical.jl`: caso canônico do livro com verificação de Prop. 7.3.3.
-- `examples/02_default_economy.jl`: comparação P&L = 0 (sem default) vs custo positivo (com `sB`).
-- `examples/03_multi_liabilities.jl`: vários passivos e alocação pro-rata vs marginal.
-- `examples/04_severer_scenario.jl`: §7.5 com estresse real maior que o planejado.
-- `examples/05_cost_surface.jl`: superfície de sensibilidade custo vs `x%` e `sB`, com CSV em `outputs/cost_surface.csv`.
-- `examples/06_endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
-- `examples/07_differentiated_runoff.jl`: exemplo com `x%` específico por passivo.
-- `examples/08_optimize_funding_mix.jl`: programa linear em JuMP/HiGHS para comparar o mix ótimo sem e com custo do buffer.
+- `examples/canonical.jl`: caso canônico do livro com verificação de Prop. 7.3.3.
+- `examples/default_economy.jl`: comparação P&L = 0 (sem default) vs custo positivo (com `sB`).
+- `examples/multi_liabilities.jl`: vários passivos e alocação pro-rata vs marginal.
+- `examples/severer_scenario.jl`: §7.5 com estresse real maior que o planejado.
+- `examples/cost_surface.jl`: superfície de sensibilidade custo vs `x%` e `sB`, com CSV em `outputs/cost_surface.csv`.
+- `examples/endogenous_spread_allocation.jl`: cenário em que a alocação marginal diverge da pro-rata por spread endógeno de liquidez.
+- `examples/differentiated_runoff.jl`: exemplo com `x%` específico por passivo.
+- `examples/optimize_funding_mix.jl`: programa linear em JuMP/HiGHS para comparar o mix ótimo sem e com custo do buffer.
 
 Executar:
 
 ```bash
-julia examples/01_canonical.jl
+julia examples/canonical.jl
 ```
 
 ## Testes
@@ -92,17 +92,17 @@ de mix de funding.
 
 ## Experimentos para o leitor
 
-1. Aumente `x_pct` em `examples/05_cost_surface.jl` e observe que o LB cresce
+1. Aumente `x_pct` em `examples/cost_surface.jl` e observe que o LB cresce
    de modo não linear, enquanto o custo continua proporcional ao spread.
 2. Troque parte do `CDB 1y` por `LF 3y` em `brazilian_setup()` e compare o
    benefício de prazo maior contra o spread maior da LF.
-3. Rode `examples/06_endogenous_spread_allocation.jl` com `threshold = 0.15`
+3. Rode `examples/endogenous_spread_allocation.jl` com `threshold = 0.15`
    e depois com `threshold = 0.30`. A diferença mostra quando a alocação
    marginal passa a importar para FTP.
 4. Substitua `sB` constante por uma curva crescente em `lb_cost_general`.
    Esse caso aproxima um banco que só consegue captar em estresse pagando
    prêmios maiores nos horizontes longos.
-5. Rode `examples/08_optimize_funding_mix.jl` e compare o mix ótimo quando o
+5. Rode `examples/optimize_funding_mix.jl` e compare o mix ótimo quando o
    objetivo ignora o buffer com o mix ótimo quando o custo do buffer entra na
    função objetivo.
 
@@ -116,14 +116,14 @@ src/
   optimization.jl # direct_funding_spread_cost, optimize_funding_mix
   scenarios.jl    # canonical_setup, brazilian_setup, european_setup, ...
 examples/
-  01_canonical.jl
-  02_default_economy.jl
-  03_multi_liabilities.jl
-  04_severer_scenario.jl
-  05_cost_surface.jl
-  06_endogenous_spread_allocation.jl
-  07_differentiated_runoff.jl
-  08_optimize_funding_mix.jl
+  canonical.jl
+  default_economy.jl
+  multi_liabilities.jl
+  severer_scenario.jl
+  cost_surface.jl
+  endogenous_spread_allocation.jl
+  differentiated_runoff.jl
+  optimize_funding_mix.jl
 test/
   runtests.jl
 outputs/
